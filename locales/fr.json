@@ -1,0 +1,42 @@
+{
+  "game": {
+    "balance": "Solde",
+    "currentCard": "Carte actuelle",
+    "nextCardQuestion": "Prochaine carte sera-t-elle plus haute ou plus basse ?",
+    "multiplier": "Multiplicateur",
+    "controls": {
+      "start": "Commencer",
+      "higher": "Plus haut",
+      "lower": "Plus bas",
+      "equal": "Égal",
+      "collect": "Encaisser"
+    },
+    "history": "Historique",
+    "probabilities": {
+      "title": "Probabilités actuelles",
+      "higher": "Plus haut",
+      "lower": "Plus bas"
+    },
+    "messages": {
+      "insufficientBalance": "Solde insuffisant!",
+      "sameValue": "Même valeur = Perdu!",
+      "goodPrediction": "Bonne prédiction! (Probabilité: {probability}%, Multiplicateur: x{multiplier})",
+      "collected": "Gains encaissés : {amount}€!",
+      "gameOver": "Partie terminée! Gains: {amount}€",
+      "gameLost": "Partie perdue! -{amount}€",
+      "errorInitialCard": "Erreur lors de l'obtention de la carte initiale. Veuillez réessayer."
+    }
+  },
+  "provablyFair": {
+    "title": "Preuve d'Équité",
+    "lastSeed": "Seed de la Dernière Main",
+    "cardFormula": "Formule de la Carte",
+    "explanation": "La prochaine carte est déterminée en hachant le seed actuel et en ajoutant la valeur de la carte actuelle, puis en prenant le modulo 13. Cela garantit que le résultat est équitable et vérifiable.",
+    "verify": "Vérifier le Résultat",
+    "copyFormula": "Copier la Formule",
+    "verificationSuccess": "Vérification réussie ! Le résultat est correct.",
+    "verificationFailed": "Échec de la vérification ! Veuillez signaler ce problème.",
+    "formulaCopied": "Formule copiée dans le presse-papiers !",
+    "noLastHand": "Jouez une main pour voir les détails de vérification."
+  }
+}

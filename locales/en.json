@@ -1,0 +1,42 @@
+{
+  "game": {
+    "balance": "Balance",
+    "currentCard": "Current Card",
+    "nextCardQuestion": "Will the next card be higher or lower?",
+    "multiplier": "Multiplier",
+    "controls": {
+      "start": "Start",
+      "higher": "Higher",
+      "lower": "Lower",
+      "equal": "Equal",
+      "collect": "Collect"
+    },
+    "history": "History",
+    "probabilities": {
+      "title": "Current probabilities",
+      "higher": "Higher",
+      "lower": "Lower"
+    },
+    "messages": {
+      "insufficientBalance": "Insufficient balance!",
+      "sameValue": "Same value = Lost!",
+      "goodPrediction": "Good prediction! (Probability: {probability}%, Multiplier: x{multiplier})",
+      "collected": "Collected: {amount}€!",
+      "gameOver": "Game Over! Winnings: {amount}€",
+      "gameLost": "Game lost! -{amount}€",
+      "errorInitialCard": "Error getting initial card. Please try again."
+    }
+  },
+  "provablyFair": {
+    "title": "Provably Fair",
+    "lastSeed": "Last Hand Seed",
+    "cardFormula": "Card Formula",
+    "explanation": "The next card is determined by hashing the current seed and adding the current card value, then taking modulo 13. This ensures the result is fair and verifiable.",
+    "verify": "Verify Result",
+    "copyFormula": "Copy Formula",
+    "verificationSuccess": "Verification successful! The result is correct.",
+    "verificationFailed": "Verification failed! Please report this issue.",
+    "formulaCopied": "Formula copied to clipboard!",
+    "noLastHand": "Play a hand to see the verification details."
+  }
+}
