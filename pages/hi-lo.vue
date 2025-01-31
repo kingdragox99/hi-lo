@@ -18,6 +18,7 @@
       <div class="card bg-base-200 p-8 mb-8 text-center">
         <h2 class="text-3xl font-bold mb-4">{{ $t("game.currentCard") }}</h2>
         <InitialCard :card="currentCard" class="mb-4" />
+        <PublicSeed :public-seed="publicSeed" v-if="publicSeed" />
         <p class="text-lg mb-4">
           {{ $t("game.nextCardQuestion") }}
         </p>
@@ -91,7 +92,11 @@
       </div>
 
       <!-- Provably Fair -->
-      <ProvablyFair :last-result="lastResult" />
+      <ProvablyFair
+        :last-result="lastResult"
+        :public-seed="publicSeed"
+        :server-hash="serverHash"
+      />
 
       <!-- Historique -->
       <div class="text-center">
@@ -107,6 +112,15 @@
             ]"
           >
             {{ formatCard(result.card) }}
+            <span class="text-xs ml-1">
+              ({{
+                result.prediction === "higher"
+                  ? "↑"
+                  : result.prediction === "lower"
+                  ? "↓"
+                  : "="
+              }})
+            </span>
           </div>
         </div>
       </div>
@@ -115,34 +129,64 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { useWalletStore } from "~/stores/wallet";
 import { useToast } from "~/composables/useToast";
 import { useI18n } from "vue-i18n";
 import ProvablyFair from "~/components/ProvablyFair.vue";
 import InitialCard from "~/components/InitialCard.vue";
+import PublicSeed from "~/components/PublicSeed.vue";
+import { CARDS } from "~/utils/constants";
+
+interface Card {
+  value: number;
+  suit: string;
+}
+
+interface GameHistory {
+  card: Card;
+  previousCard: Card;
+  prediction: string;
+  won: boolean;
+  multiplier: number;
+}
+
+interface Probabilities {
+  higher?: {
+    probability: number;
+    multiplier: number;
+  };
+  lower?: {
+    probability: number;
+    multiplier: number;
+  };
+  equal?: {
+    probability: number;
+    multiplier: number;
+  };
+  nextCard?: Card;
+  serverHash: string;
+  publicSeed: string;
+}
 
 const toast = useToast();
 const wallet = useWalletStore();
 const { t } = useI18n();
 const bet = ref(10);
-const currentCard = ref({ suit: 0, value: 0 });
-const history = ref([]);
+const currentCard = ref<Card>({ value: 1, suit: "♠" });
+const history = ref<GameHistory[]>([]);
 const isPlaying = ref(false);
 const streak = ref(0);
-const probabilities = ref({});
+const probabilities = ref<Probabilities>({});
 const currentSeed = ref("");
 const lastResult = ref(null);
 const isInitialized = ref(false);
-
-const cards = {
-  suits: ["♠", "♥", "♦", "♣"],
-  values: ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"],
-};
+const publicSeed = ref("");
+const serverHash = ref("");
 
 // Calculer la probabilité de gagner pour la prédiction actuelle
-function calculateWinProbability(card, prediction) {
+function calculateWinProbability(card: Card, prediction: string): number {
   const totalCards = 13; // A à K
   let favorableOutcomes = 0;
 
@@ -158,7 +202,7 @@ function calculateWinProbability(card, prediction) {
 }
 
 // Calculer le multiplicateur basé sur la probabilité
-function calculateMultiplier(probability) {
+function calculateMultiplier(probability: number) {
   // Formule : plus la probabilité est faible, plus le multiplicateur est élevé
   // Base : 1 + (1 - probabilité) * facteur
   const baseMult = 1 + (1 - probability) * 2;
@@ -196,22 +240,26 @@ const canBet = computed(() => {
   return isPlaying.value && !waitingForNext.value;
 });
 
-function generateRandomCard() {
+function generateRandomCard(): Card {
   const suit = Math.floor(Math.random() * 4);
   const value = Math.floor(Math.random() * 13);
-  return { suit, value };
+  return { suit: CARDS.suits[suit], value };
 }
 
-function getCardValue(card) {
+function getCardValue(card: Card): number {
   return card.value;
 }
 
-function formatCard(card) {
-  return `${cards.values[card.value]}${cards.suits[card.suit]}`;
+function formatCard(card: Card): string {
+  if (card.value < 1 || card.value > 13) {
+    console.error("Invalid card value:", card.value);
+    return "?";
+  }
+  return `${CARDS.values[card.value]}${card.suit}`;
 }
 
-function isRedCard(card) {
-  return card.suit === 1 || card.suit === 2; // ♥ ou ♦
+function isRedCard(card: Card): boolean {
+  return card.suit === "♥" || card.suit === "♦"; // ♥ ou ♦
 }
 
 function generateSeed() {
@@ -248,14 +296,34 @@ async function startGame() {
   isPlaying.value = true;
   streak.value = 0;
   history.value = [];
-  // Obtenir la première carte du serveur
+
   try {
-    currentCard.value = await $fetch("/api/game/initial-card");
+    // Obtenir la première carte du serveur
+    const {
+      card,
+      publicSeed: seed,
+      serverHash: hash,
+    } = await $fetch("/api/game/initial-card");
+    currentCard.value = card;
+    publicSeed.value = seed;
+    serverHash.value = hash;
+
+    // Calculer les probabilités pour la première carte
+    const response = await $fetch("/api/game/calculate", {
+      method: "POST",
+      body: {
+        card: {
+          ...currentCard.value,
+          seed: currentSeed.value,
+          streak: streak.value,
+        },
+      },
+    });
+    probabilities.value = response;
   } catch (error) {
     toast.error(t("game.messages.errorInitialCard"));
     return;
   }
-  updateProbabilities();
   lastResult.value = null;
 }
 
@@ -272,14 +340,27 @@ function collectWinnings() {
 
 const waitingForNext = ref(false);
 
-async function placeBet(prediction) {
+async function placeBet(prediction: "higher" | "lower" | "equal") {
   if (!canBet.value) return;
 
   waitingForNext.value = true;
-  const oldCard = currentCard.value;
+  const oldCard = { ...currentCard.value };
+
+  if (!probabilities.value.nextCard) {
+    toast.error(t("game.messages.errorNextCard"));
+    waitingForNext.value = false;
+    return;
+  }
 
   // Utiliser la carte prédéterminée du serveur
   const newCard = probabilities.value.nextCard;
+  if (!isValidCard(newCard)) {
+    console.error("Invalid next card:", newCard);
+    toast.error(t("game.messages.errorNextCard"));
+    waitingForNext.value = false;
+    return;
+  }
+
   currentCard.value = newCard; // Mettre à jour la carte immédiatement
 
   // Vérifier si gagné
@@ -295,6 +376,10 @@ async function placeBet(prediction) {
     nextValue: newCard.value,
     nextSuit: newCard.suit,
   };
+
+  // S'assurer que le serverHash est mis à jour avec la nouvelle valeur
+  serverHash.value = probabilities.value.serverHash;
+  publicSeed.value = probabilities.value.publicSeed;
 
   // Mettre à jour l'historique
   history.value.unshift({
@@ -336,6 +421,27 @@ function endGame(withWinnings = true) {
   streak.value = 0;
   waitingForNext.value = false;
 }
+
+function isValidCard(card: Card): boolean {
+  return (
+    card &&
+    typeof card.value === "number" &&
+    card.value >= 1 &&
+    card.value <= 13 &&
+    typeof card.suit === "string" &&
+    ["♠", "♥", "♦", "♣"].includes(card.suit)
+  );
+}
+
+// Récupérer les seeds au chargement
+onMounted(async () => {
+  try {
+    const { publicSeed: seed, timestamp } = await $fetch("/api/game/seeds");
+    publicSeed.value = seed;
+  } catch (error) {
+    console.error("Error fetching seeds:", error);
+  }
+});
 </script>
 
 <style scoped>

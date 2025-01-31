@@ -1,4 +1,9 @@
 {
+  "nav": {
+    "play": "Play",
+    "leaderboard": "Leaderboard",
+    "howToPlay": "How to Play"
+  },
   "game": {
     "balance": "Balance",
     "currentCard": "Current Card",
@@ -18,18 +23,20 @@
       "lower": "Lower"
     },
     "messages": {
-      "insufficientBalance": "Insufficient balance!",
+      "insufficientBalance": "Insufficient balance",
+      "errorInitialCard": "Error getting initial card",
+      "errorNextCard": "Error getting next card",
       "sameValue": "Same value = Lost!",
       "goodPrediction": "Good prediction! (Probability: {probability}%, Multiplier: x{multiplier})",
       "collected": "Collected: {amount}€!",
       "gameOver": "Game Over! Winnings: {amount}€",
-      "gameLost": "Game lost! -{amount}€",
-      "errorInitialCard": "Error getting initial card. Please try again."
+      "gameLost": "Game lost! -{amount}€"
     }
   },
   "provablyFair": {
     "title": "Provably Fair",
     "lastSeed": "Last Hand Seed",
+    "publicSeed": "Public Seed",
     "cardFormula": "Card Formula",
     "explanation": "The next card is determined by hashing the current seed and adding the current card value, then taking modulo 13. This ensures the result is fair and verifiable.",
     "verify": "Verify Result",

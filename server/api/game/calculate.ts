@@ -1,27 +1,23 @@
 import { defineEventHandler } from "h3";
+import { generateSeeds, generateNextCard } from "~/server/utils/seedGenerator";
 
 interface CardState {
-  suit: number;
+  suit: string;
   value: number;
   seed: string;
   streak: number;
 }
 
 interface Card {
-  suit: number;
+  suit: string;
   value: number;
 }
 
-function generateNextCard(seed: string, currentValue: number): Card {
-  // Utiliser le seed pour générer à la fois la valeur et la couleur
-  const hash = Array.from(seed).reduce(
-    (acc, char) => acc + char.charCodeAt(0),
-    0
-  );
-
-  return {
-    value: (hash + currentValue) % 13,
-    suit: Math.floor((hash * currentValue) % 4), // Utiliser le hash pour la couleur aussi
+interface RequestBody {
+  card: {
+    suit: string;
+    value: number;
+    streak?: number;
   };
 }
 
@@ -40,12 +36,19 @@ function calculateMultiplier(probability: number, streak: number): number {
 }
 
 function calculateProbabilities(card: CardState) {
+  const seeds = generateSeeds();
+  const { publicSeed, serverSeed } = seeds;
+
+  // Sauvegarder le serverSeed pour la vérification
+  const nextServerHash = serverSeed;
+
+  // Valeurs des cartes : 1 = As, 2 = 2, ..., 12 = Q, 13 = K
   const totalCards = 13;
   const currentValue = card.value;
   const streak = card.streak || 0;
 
-  const higherCards = totalCards - (currentValue + 1);
-  const lowerCards = currentValue;
+  const higherCards = totalCards - currentValue;
+  const lowerCards = currentValue - 1;
   const equalCards = 1;
 
   const total = totalCards;
@@ -55,7 +58,7 @@ function calculateProbabilities(card: CardState) {
   const lowerProb = Math.round((lowerCards / total) * 100);
   const equalProb = Math.round((equalCards / total) * 100);
 
-  const nextCard = generateNextCard(card.seed, currentValue);
+  const nextCard = generateNextCard(publicSeed, serverSeed, currentValue);
 
   return {
     higher: {
@@ -70,18 +73,27 @@ function calculateProbabilities(card: CardState) {
       probability: equalProb,
       multiplier: calculateMultiplier(equalProb / 100, streak) * 1.125,
     },
-    nextCard, // Retourne maintenant un objet avec suit et value
+    nextCard,
+    publicSeed,
+    serverHash: nextServerHash, // Utiliser la nouvelle valeur
   };
 }
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event);
+  const body = await readBody<RequestBody>(event);
   const { card } = body;
 
-  if (!card || typeof card.value !== "number" || !card.seed) {
+  if (
+    !card ||
+    typeof card.value !== "number" ||
+    typeof card.suit !== "string" ||
+    card.value < 1 ||
+    card.value > 13 ||
+    !["♠", "♥", "♦", "♣"].includes(card.suit)
+  ) {
     throw createError({
       statusCode: 400,
-      message: "Invalid card data",
+      message: "Invalid card data: missing or invalid properties",
     });
   }
 

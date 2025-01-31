@@ -22,11 +22,19 @@
 
         <div class="grid gap-2">
           <div class="text-sm opacity-70">
+            {{ $t("provablyFair.publicSeed") }}
+          </div>
+          <div class="font-mono text-sm break-all">{{ publicSeed }}</div>
+        </div>
+
+        <div class="grid gap-2">
+          <div class="text-sm opacity-70">
             {{ $t("provablyFair.cardFormula") }}
           </div>
           <div class="font-mono text-sm break-all">
-            hash({{ lastResult.seed }}) + {{ lastResult.previousValue }} % 13 =
-            {{ lastResult.nextValue }} ({{
+            SHA256({{ publicSeed }}-{{ serverHash }}-{{
+              lastResult.previousValue
+            }}) % 13 + 1 = {{ lastResult.nextValue }} ({{
               formatCard({
                 value: lastResult.nextValue,
                 suit: lastResult.nextSuit,
@@ -59,6 +67,8 @@
 import { ref } from "vue";
 import { useToast } from "~/composables/useToast";
 import { useI18n } from "vue-i18n";
+import CryptoJS from "crypto-js";
+import { verifyCard } from "~/utils/cardVerification";
 
 const toast = useToast();
 const { t } = useI18n();
@@ -68,37 +78,77 @@ const props = defineProps<{
     seed: string;
     previousValue: number;
     nextValue: number;
-    nextSuit: number;
+    nextSuit: string;
   };
+  publicSeed: string;
+  serverHash: string;
 }>();
 
 const showDetails = ref(false);
 
 const cards = {
-  suits: ["♠", "♥", "♦", "♣"],
-  values: ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"],
+  values: [
+    "",
+    "A",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "J",
+    "Q",
+    "K",
+  ],
 };
 
-function formatCard(card: { value: number; suit: number }): string {
-  return `${cards.values[card.value]}${cards.suits[card.suit]}`;
+const SUITS = ["♠", "♥", "♦", "♣"] as const;
+
+function formatCard(card: { value: number; suit: string }): string {
+  return `${cards.values[card.value]}${card.suit}`;
 }
 
-function calculateHash(seed: string): number {
-  return Array.from(seed).reduce((acc, char) => acc + char.charCodeAt(0), 0);
+function verifyNextCard(
+  publicSeed: string,
+  serverSeed: string,
+  currentValue: number
+) {
+  return verifyCard(publicSeed, serverSeed, currentValue);
 }
 
 function verifyResult() {
   if (!props.lastResult) return;
 
-  const hash = calculateHash(props.lastResult.seed);
-  const calculatedValue = (hash + props.lastResult.previousValue) % 13;
-  const calculatedSuit = Math.floor(
-    (hash * props.lastResult.previousValue) % 4
+  console.log("Verification inputs:", {
+    publicSeed: props.publicSeed,
+    serverHash: props.serverHash,
+    previousValue: props.lastResult.previousValue,
+    combinedSeed: `${props.publicSeed}-${props.serverHash}-${props.lastResult.previousValue}`,
+  });
+
+  const calculatedCard = verifyNextCard(
+    props.publicSeed,
+    props.serverHash,
+    props.lastResult.previousValue
   );
 
+  console.log("Verification results:", {
+    calculated: calculatedCard,
+    expected: {
+      value: props.lastResult.nextValue,
+      suit: props.lastResult.nextSuit,
+    },
+    hash: CryptoJS.SHA256(
+      `${props.publicSeed}-${props.serverHash}-${props.lastResult.previousValue}`
+    ).toString(CryptoJS.enc.Hex),
+  });
+
   if (
-    calculatedValue === props.lastResult.nextValue &&
-    calculatedSuit === props.lastResult.nextSuit
+    calculatedCard.value === props.lastResult.nextValue &&
+    calculatedCard.suit === props.lastResult.nextSuit
   ) {
     toast.success(t("provablyFair.verificationSuccess"));
   } else {
@@ -109,18 +159,25 @@ function verifyResult() {
 function copyFormula() {
   if (!props.lastResult) return;
 
-  const formula = `function generateNextCard(seed, currentValue) {
-    const hash = Array.from(seed).reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const formula = `
+  const SUITS = ["♠", "♥", "♦", "♣"];
+
+  function generateNextCard(publicSeed, serverSeed, currentValue) {
+    const combinedSeed = \`\${publicSeed}-\${serverSeed}-\${currentValue}\`;
+    const hash = CryptoJS.SHA256(combinedSeed).toString(CryptoJS.enc.Hex);
+    const hashNumber = parseInt(hash.slice(0, 8), 16);
+
     return {
-      value: (hash + currentValue) % 13,
-      suit: Math.floor((hash * currentValue) % 4)
+      value: (hashNumber % 13) + 1,
+      suit: SUITS[hashNumber % 4]
     };
   }
 
   // Example:
-  const seed = "${props.lastResult.seed}";
+  const publicSeed = "${props.publicSeed}";
+  const serverSeed = "${props.serverHash}";
   const currentValue = ${props.lastResult.previousValue};
-  const nextCard = generateNextCard(seed, currentValue); // Should be ${formatCard(
+  const nextCard = generateNextCard(publicSeed, serverSeed, currentValue); // Should be ${formatCard(
     {
       value: props.lastResult.nextValue,
       suit: props.lastResult.nextSuit,

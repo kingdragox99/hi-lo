@@ -1,6 +1,10 @@
 <template>
   <ClientOnly>
-    <div class="text-6xl font-bold" :class="{ 'text-red-500': isRedCard }">
+    <div
+      v-if="card"
+      class="text-6xl font-bold"
+      :class="{ 'text-red-500': isRedCard }"
+    >
       {{ formatCard(card) }}
     </div>
     <template #fallback>
@@ -13,24 +17,42 @@
 import { computed } from "vue";
 
 interface Card {
-  suit: number;
   value: number;
+  suit: string;
 }
 
 const props = defineProps<{
-  card: Card;
+  card?: Card;
 }>();
 
 const cards = {
-  suits: ["♠", "♥", "♦", "♣"],
-  values: ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"],
+  values: [
+    "",
+    "A",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "J",
+    "Q",
+    "K",
+  ],
 };
 
-const isRedCard = computed(
-  () => props.card.suit === 1 || props.card.suit === 2
+const isRedCard = computed(() =>
+  props.card ? props.card.suit === "♥" || props.card.suit === "♦" : false
 );
 
 function formatCard(card: Card): string {
-  return `${cards.values[card.value]}${cards.suits[card.suit]}`;
+  if (card.value < 1 || card.value > 13) {
+    console.error("Invalid card value:", card.value);
+    return "?";
+  }
+  return `${cards.values[card.value]}${card.suit}`;
 }
 </script>

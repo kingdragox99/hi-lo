@@ -29,4 +29,11 @@ export default defineNuxtConfig({
       supabaseKey: process.env.NUXT_PUBLIC_SUPABASE_ANON_KEY,
     },
   },
+  nitro: {
+    node: {
+      processEnv: {
+        NODE_NO_WARNINGS: "1",
+      },
+    },
+  },
 });
