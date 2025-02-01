@@ -29,6 +29,13 @@
             >
               {{ $t("nav.howToPlay") }}
             </NuxtLink>
+            <NuxtLink
+              to="/stats"
+              class="hover:text-primary transition-colors"
+              active-class="text-primary"
+            >
+              {{ $t("nav.stats") }}
+            </NuxtLink>
           </nav>
 
           <!-- Sélecteur de langue -->

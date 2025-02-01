@@ -2,7 +2,8 @@
   "nav": {
     "play": "Jouer",
     "leaderboard": "Classement",
-    "howToPlay": "Comment jouer"
+    "howToPlay": "Comment jouer",
+    "stats": "Statistiques"
   },
   "game": {
     "balance": "Solde",
@@ -45,5 +46,26 @@
     "verificationFailed": "Échec de la vérification ! Veuillez signaler ce problème.",
     "formulaCopied": "Formule copiée dans le presse-papiers !",
     "noLastHand": "Jouez une main pour voir les détails de vérification."
+  },
+  "stats": {
+    "title": "Statistiques",
+    "totalGames": "Parties totales",
+    "winRate": "Taux de victoire",
+    "totalBets": "Total des mises",
+    "totalPayouts": "Total des gains",
+    "predictionDistribution": "Distribution des prédictions",
+    "payoutDistribution": "Distribution des gains",
+    "recentGames": "Parties récentes",
+    "time": "Heure",
+    "initialCard": "Carte initiale",
+    "prediction": "Prédiction",
+    "nextCard": "Carte suivante",
+    "result": "Résultat",
+    "betAmount": "Mise",
+    "multiplier": "Multiplicateur",
+    "payout": "Gain",
+    "totalPredictions": "Nombre total de prédictions",
+    "payoutHistory": "Historique des gains cumulés",
+    "noData": "Aucune donnée disponible pour le moment"
   }
 }

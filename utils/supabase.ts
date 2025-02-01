@@ -1,5 +1,6 @@
-// Supprimons toute l'initialisation de Supabase et gardons uniquement le composable
+import { createClient } from "@supabase/supabase-js";
+
 export const useSupabase = () => {
-  const { $supabase } = useNuxtApp()
-  return $supabase
-} 
+  const { $supabase } = useNuxtApp();
+  return $supabase;
+};

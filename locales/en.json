@@ -2,7 +2,8 @@
   "nav": {
     "play": "Play",
     "leaderboard": "Leaderboard",
-    "howToPlay": "How to Play"
+    "howToPlay": "How to Play",
+    "stats": "Statistics"
   },
   "game": {
     "balance": "Balance",
@@ -45,5 +46,26 @@
     "verificationFailed": "Verification failed! Please report this issue.",
     "formulaCopied": "Formula copied to clipboard!",
     "noLastHand": "Play a hand to see the verification details."
+  },
+  "stats": {
+    "title": "Statistics",
+    "totalGames": "Total Games",
+    "winRate": "Win Rate",
+    "totalBets": "Total bets",
+    "totalPayouts": "Total payouts",
+    "predictionDistribution": "Prediction Distribution",
+    "payoutDistribution": "Payout Distribution",
+    "recentGames": "Recent Games",
+    "time": "Time",
+    "initialCard": "Initial Card",
+    "prediction": "Prediction",
+    "nextCard": "Next Card",
+    "result": "Result",
+    "betAmount": "Bet Amount",
+    "multiplier": "Multiplier",
+    "payout": "Payout",
+    "totalPredictions": "Total predictions",
+    "payoutHistory": "Cumulative payout history",
+    "noData": "No data available yet"
   }
 }

@@ -138,6 +138,7 @@ import ProvablyFair from "~/components/ProvablyFair.vue";
 import InitialCard from "~/components/InitialCard.vue";
 import PublicSeed from "~/components/PublicSeed.vue";
 import { CARDS } from "~/utils/constants";
+import { useSupabase } from "~/utils/supabase";
 
 interface Card {
   value: number;
@@ -173,6 +174,7 @@ interface Probabilities {
 const toast = useToast();
 const wallet = useWalletStore();
 const { t } = useI18n();
+const supabase = useSupabase();
 const bet = ref(10);
 const currentCard = ref<Card>({ value: 1, suit: "♠" });
 const history = ref<GameHistory[]>([]);
@@ -393,6 +395,17 @@ async function placeBet(prediction: "higher" | "lower" | "equal") {
   if (won) {
     streak.value++;
     const winMultiplier = probabilities.value[prediction].multiplier;
+    // Enregistrer les statistiques
+    await supabase.from("game_stats").insert({
+      initial_card: oldCard,
+      prediction,
+      next_card: newCard,
+      won,
+      bet_amount: bet.value,
+      multiplier: winMultiplier,
+      payout: bet.value * winMultiplier,
+    });
+
     toast.success(
       t("game.messages.goodPrediction", {
         probability: probabilities.value[prediction].probability,
@@ -402,6 +415,16 @@ async function placeBet(prediction: "higher" | "lower" | "equal") {
     currentSeed.value = generateSeed(); // Nouveau seed pour la prochaine carte
     await updateProbabilities();
   } else {
+    // Enregistrer les statistiques pour les pertes aussi
+    await supabase.from("game_stats").insert({
+      initial_card: oldCard,
+      prediction,
+      next_card: newCard,
+      won,
+      bet_amount: bet.value,
+      multiplier: 0,
+      payout: 0,
+    });
     endGame(false);
   }
 
